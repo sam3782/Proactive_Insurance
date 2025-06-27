@@ -3,5 +3,4 @@ PyPDF2
 sentence-transformers
 faiss-cpu
 huggingface_hub
-smtplib
 python-dotenv
