@@ -64,48 +64,44 @@ cd Proactive_Insurance
 Windows:
 
 powershell
-Copy
-Edit
+
 python -m venv venv
+
 venv\Scripts\activate
+
 macOS/Linux:
 
-bash
-Copy
-Edit
 python3 -m venv venv
+
 source venv/bin/activate
+
 📦 3. Install Dependencies
-bash
-Copy
-Edit
+
 pip install -r requirements.txt
+
 🔑 4. Configure Environment Variables
+
 Create a .env file in the project root:
 
-ini
-Copy
-Edit
 HF_TOKEN=your_huggingface_api_token
+
 EMAIL_ADDRESS=your_email@gmail.com
+
 EMAIL_PASSWORD=your_gmail_app_password
 ✅ Important:
 
 Your Gmail must use an App Password.
+
 How to create an app password.
 
 Your Hugging Face token must have Inference API access.
 
 ▶️ 5. Run the Application
-bash
-Copy
-Edit
+
 python app.py
+
 Visit:
 
-cpp
-Copy
-Edit
 http://127.0.0.1:3000
 🧠 How It Works
 Upload PDF: The app extracts all text.
@@ -148,12 +144,15 @@ WSGI-based hosting
 
 ⚠️ Disclaimer
 This project is for educational purposes only.
+
 It provides general information and is not a substitute for professional insurance advice.
+
 Always consult your insurance advisor for specific guidance.
 
 
 
 ✉️ Contact
+
 Shivam Sharma
 
 LinkedIn:https://www.linkedin.com/in/shivam-sharma-ba2a4823a/ 
