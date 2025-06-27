@@ -1,19 +1,23 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session, redirect, url_for
 import os
 import PyPDF2
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import faiss
 from huggingface_hub import InferenceClient
+import smtplib
+from email.mime.text import MIMEText
+from dotenv import load_dotenv
+load_dotenv()
+
 
 app = Flask(__name__)
+app.secret_key = "super_secret_key"  # Needed for session
 app.config["UPLOAD_FOLDER"] = "uploads"
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
-# Load embedding model
+# Load models once
 embed_model = SentenceTransformer("all-MiniLM-L6-v2")
-
-# Load LLM
 client = InferenceClient(
     model="mistralai/Mistral-7B-Instruct-v0.2",
     token=os.getenv("HF_TOKEN")
@@ -25,9 +29,17 @@ def clean_text(text):
     cleaned = []
     for line in lines:
         line = line.strip()
-        if line and not line.lower().startswith("section"):
+        if line:
             cleaned.append(line)
     return " ".join(cleaned)
+
+# Helper to highlight keywords
+def highlight_context(context, keywords):
+    for word in keywords:
+        context = context.replace(
+            word, f"<mark>{word}</mark>"
+        )
+    return context
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -35,72 +47,79 @@ def index():
     retrieved_context = ""
     filename = ""
 
+    if "history" not in session:
+        session["history"] = []
+
     if request.method == "POST":
         pdf = request.files.get("pdf")
         question = request.form.get("question")
+        email = request.form.get("email")
         filename = request.form.get("filename", "")
 
-        # If uploading a new PDF
+        # If new PDF uploaded
         if pdf:
             filename = pdf.filename
             pdf_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
             pdf.save(pdf_path)
 
-            # Extract text
             text = ""
             reader = PyPDF2.PdfReader(pdf_path)
             for page in reader.pages:
                 text += page.extract_text() or ""
 
-            # Save extracted text
             text_path = os.path.join(app.config["UPLOAD_FOLDER"], f"{filename}.txt")
             with open(text_path, "w", encoding="utf-8") as f:
                 f.write(text)
 
-        # Only proceed if there's a question
+        # Q&A processing
         if filename and question:
-            # Load saved text
             text_path = os.path.join(app.config["UPLOAD_FOLDER"], f"{filename}.txt")
             with open(text_path, "r", encoding="utf-8") as f:
                 text = f.read()
 
-            # Split into chunks
+            # Chunk
             chunk_size = 300
             chunks = [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
 
-            # Embed chunks
             embeddings = embed_model.encode(chunks).astype("float32")
             index = faiss.IndexFlatL2(embeddings.shape[1])
             index.add(embeddings)
 
-            # Embed question
             q_embedding = embed_model.encode([question]).astype("float32")
             _, I = index.search(q_embedding, k=1)
             retrieved_chunks = [chunks[i] for i in I[0]]
+            raw_context = " ".join([clean_text(chunk) for chunk in retrieved_chunks])
 
-            retrieved_context = " ".join([clean_text(chunk) for chunk in retrieved_chunks])
+            # Highlight keywords
+            keywords = question.lower().split()
+            retrieved_context = highlight_context(raw_context, keywords)
 
-            # Prompt for LLM
-            prompt_content = (
+            prompt = (
                 "Based only on the policy text below, answer the user's question. "
                 "If the answer is not specified, reply exactly: 'Not specified in the policy.'\n\n"
-                f"<<<POLICY>>>\n{retrieved_context}\n<<<END_POLICY>>>\n\n"
+                f"<<<POLICY>>>\n{raw_context}\n<<<END_POLICY>>>\n\n"
                 f"Question: {question}\n\n"
                 "Answer in clear, short plain English:"
             )
 
             messages = [
                 {"role": "system", "content": "You are a helpful insurance policy expert."},
-                {"role": "user", "content": prompt_content}
+                {"role": "user", "content": prompt}
             ]
 
-            # Get response
             response = client.chat_completion(
                 messages,
                 max_tokens=150,
                 temperature=0.0
             )
             answer = response.choices[0].message.content.strip()
+
+            # Save chat history
+            session["history"].append({"question": question, "answer": answer})
+
+            # Email answer if email provided
+            if email:
+                send_email(email, question, answer)
 
         elif not pdf and not question:
             answer = "Please upload a PDF and/or provide a question."
@@ -109,8 +128,26 @@ def index():
         "index.html",
         answer=answer,
         retrieved_context=retrieved_context,
-        filename=filename
+        filename=filename,
+        history=session.get("history", [])
     )
+
+# Email helper
+def send_email(to_email, question, answer):
+    from_email = os.getenv("EMAIL_ADDRESS")
+    password = os.getenv("EMAIL_PASSWORD")
+
+
+    msg = MIMEText(f"Question:\n{question}\n\nAnswer:\n{answer}")
+    msg["Subject"] = "Your Insurance Policy Answer"
+    msg["From"] = from_email
+    msg["To"] = to_email
+
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login(from_email, password)
+    server.sendmail(from_email, to_email, msg.as_string())
+    server.quit()
 
 if __name__ == "__main__":
     app.run(debug=True, port=3000)
