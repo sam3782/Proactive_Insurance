@@ -9,6 +9,7 @@ import smtplib
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
 load_dotenv()
+print("HF_TOKEN:", os.getenv("HF_TOKEN"))
 
 
 app = Flask(__name__)

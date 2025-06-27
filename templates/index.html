@@ -146,6 +146,16 @@
                     class="flex-1 p-3 border border-gray-300 rounded-lg"
                     placeholder="Ask about your coverage, exclusions, or recommendations..."
                   ></textarea>
+                  <!-- 🎤 Voice Input Button -->
+                  <button
+                    type="button"
+                    onclick="startVoiceInput()"
+                    title="Speak"
+                    class="self-end bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-3 rounded-lg transition flex items-center"
+                  >
+                    <i class="fas fa-microphone"></i>
+                  </button>
+                  <!-- ✅ Submit Button -->
                   <button
                     type="submit"
                     class="self-end gradient-bg text-white px-6 py-3 rounded-lg hover:opacity-90 transition flex items-center"
@@ -228,6 +238,60 @@
     </div>
 
     <script>
+      let recognition = null;
+      let recognizing = false;
+
+      function startVoiceInput() {
+        if (!("webkitSpeechRecognition" in window)) {
+          alert("Sorry, your browser doesn't support speech recognition.");
+          return;
+        }
+
+        if (!recognition) {
+          recognition = new webkitSpeechRecognition();
+          recognition.lang = "en-US";
+          recognition.interimResults = false;
+          recognition.maxAlternatives = 1;
+
+          recognition.onstart = function () {
+            recognizing = true;
+            console.log("🎤 Voice recognition started...");
+            document
+              .querySelector(".fa-microphone")
+              .classList.add("text-red-500");
+          };
+
+          recognition.onend = function () {
+            recognizing = false;
+            console.log("🎤 Voice recognition stopped.");
+            document
+              .querySelector(".fa-microphone")
+              .classList.remove("text-red-500");
+          };
+
+          recognition.onerror = function (event) {
+            recognizing = false;
+            console.error("Error occurred:", event.error);
+            alert("Speech recognition error: " + event.error);
+            document
+              .querySelector(".fa-microphone")
+              .classList.remove("text-red-500");
+          };
+
+          recognition.onresult = function (event) {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById("questionInput").value = transcript;
+            document.getElementById("questionInput").focus();
+          };
+        }
+
+        if (recognizing) {
+          recognition.stop();
+        } else {
+          recognition.start();
+        }
+      }
+
       function setQuestion(q) {
         document.getElementById("questionInput").value = q;
         document.getElementById("questionInput").focus();
