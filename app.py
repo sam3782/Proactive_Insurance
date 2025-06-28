@@ -17,6 +17,7 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = "super_secret_key"  # Needed for session
 app.config["UPLOAD_FOLDER"] = "uploads"
+
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 # Load embedding model
@@ -171,7 +172,7 @@ def clear_history():
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
-    import os
+
     # Default to 8082 which also works on many platforms (but overridden by $PORT if set)
-    port = int(os.environ.get("PORT", 8082))
+    port = int(os.environ.get("PORT", 3000))
     app.run(host="0.0.0.0", port=port)
