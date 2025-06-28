@@ -136,20 +136,19 @@ Sends optional emails with the answer
 Supports voice input for questions
 
 📸 Screenshots
-(Add screenshots here)
+![Screenshot 2025-06-28 085310](https://github.com/user-attachments/assets/d07e3330-2176-47fe-8e06-ca2c7a27bbbc)
+
 
 ⚠️ Disclaimer
 This project is for educational purposes only. It does not replace professional insurance advice. Always consult a qualified insurance advisor for policy guidance.
 
-📄 License
-This project is released under the MIT License.
 
 ✨ Contact
 Shivam Sharma
 
 LinkedIn
 
-Email: shivam3782@gmail.com
+Email:shivam3782@gmail.com
 
 🌟 Future Enhancements
 Summarize the entire policy
@@ -163,10 +162,5 @@ Persistent chat storage in a database
 User authentication and profiles
 
 
-✉️ Contact
 
-Shivam Sharma
 
-LinkedIn:https://www.linkedin.com/in/shivam-sharma-ba2a4823a/ 
-
-Email:shivam3782@gmail.com
