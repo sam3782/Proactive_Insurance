@@ -164,10 +164,14 @@ def send_email(to_email, question, answer):
     server.login(from_email, password)
     server.sendmail(from_email, to_email, msg.as_string())
     server.quit()
+    
 @app.route("/clear_history", methods=["POST"])
 def clear_history():
     session["history"] = []
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
-    app.run(debug=True, port=3000)
+    import os
+    # Default to 8082 which also works on many platforms (but overridden by $PORT if set)
+    port = int(os.environ.get("PORT", 8082))
+    app.run(host="0.0.0.0", port=port)
